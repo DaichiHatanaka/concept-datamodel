@@ -7,23 +7,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
-    env: {
-      // Skip env validation in tests (src/env.ts validates on import)
-      SKIP_ENV_VALIDATION: "1",
-    },
+    setupFiles: ["./tests/setup.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      include: ["src/**/*.{ts,tsx}"],
-      exclude: [
-        "src/**/*.test.{ts,tsx}",
-        "src/**/*.spec.{ts,tsx}",
-        "src/test/**",
-        "src/env.ts",
-        "src/db/**",
-      ],
     },
   },
   resolve: {

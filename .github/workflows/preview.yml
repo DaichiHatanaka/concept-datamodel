@@ -1,27 +1,27 @@
-name: Vercel Preview Deployment
+name: Release
 
 on:
-  pull_request:
-    branches:
-      - main
-
-# Skip this workflow if Vercel secrets are not configured.
-# After forking/templating this repo, add VERCEL_TOKEN, VERCEL_ORG_ID,
-# and VERCEL_PROJECT_ID to your repository secrets to enable preview deployments.
-# See README.md for details.
-
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  push:
+    tags:
+      - "v*"
 
 jobs:
-  deploy-preview:
-    runs-on: ubuntu-latest
-    # Skip gracefully when Vercel secrets are not configured
-    if: ${{ secrets.VERCEL_TOKEN != '' }}
+  release:
     permissions:
-      pull-requests: write
-
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,42 +31,35 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Type check
-        run: pnpm tsc --noEmit
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Install Vercel CLI
-        run: pnpm add -g vercel@latest
-
-      - name: Pull Vercel environment
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build project
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy to Vercel (Preview)
-        id: deploy
-        run: |
-          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "preview_url=$url" >> $GITHUB_OUTPUT
-
-      - name: Comment preview URL on PR
-        uses: actions/github-script@v7
-        env:
-          PREVIEW_URL: ${{ steps.deploy.outputs.preview_url }}
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
         with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## Vercel Preview Deployment\n\n✅ Preview ready: ${process.env.PREVIEW_URL}`
-            })
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install system dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "${{ github.ref_name }}"
+          releaseBody: "See CHANGELOG for details."
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.target }}

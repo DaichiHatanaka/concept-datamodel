@@ -1,228 +1,149 @@
 # プロジェクト概要
 
-Next.js + Neon (PostgreSQL) + Vercel を使ったフルスタック Web アプリケーション。
-Claude Code による AI 駆動開発を前提とした構成になっている。
+Tauri v2 + React 19 + Vite 6 のデスクトップアプリ開発テンプレート。
+Claude Code による AI 駆動開発を前提とした設計。
 
 ## 技術スタック
 
-| カテゴリ             | 技術                             |
-| -------------------- | -------------------------------- |
-| フレームワーク       | Next.js 15 (App Router)          |
-| 言語                 | TypeScript                       |
-| スタイリング         | Tailwind CSS v4                  |
-| データベース         | Neon (PostgreSQL / サーバーレス) |
-| ORM                  | Drizzle ORM                      |
-| デプロイ             | Vercel                           |
-| パッケージマネージャ | pnpm                             |
+| カテゴリ             | 技術                      | バージョン |
+| -------------------- | ------------------------- | ---------- |
+| デスクトップ         | Tauri                     | v2         |
+| バックエンド言語     | Rust                      | stable     |
+| DB                   | SQLite (rusqlite bundled) | 0.32       |
+| フレームワーク       | React                     | 19         |
+| ビルドツール         | Vite                      | 6          |
+| 状態管理             | Zustand                   | v5         |
+| スタイリング         | Tailwind CSS              | v4         |
+| UIコンポーネント     | shadcn/ui                 | latest     |
+| コマンドパレット     | cmdk                      | 1          |
+| 言語                 | TypeScript                | 5 (strict) |
+| パッケージマネージャ | pnpm                      | latest     |
 
 ## 主要コマンド
 
 ```bash
-pnpm dev              # 開発サーバー起動 (http://localhost:3000)
-pnpm build            # プロダクションビルド
-pnpm lint             # ESLint チェック
-pnpm type-check       # TypeScript 型チェック (tsc --noEmit)
+# 開発
+pnpm tauri dev          # デスクトップアプリ起動 (Rust + Vite hot reload)
+pnpm dev               # フロントエンドのみ起動 (http://localhost:1420)
 
-# DB マイグレーション
-pnpm drizzle-kit generate   # マイグレーションファイル生成
-pnpm drizzle-kit migrate    # マイグレーション実行
-pnpm drizzle-kit studio     # DB GUI ブラウザで開く
+# ビルド
+pnpm tauri build        # プロダクションビルド + インストーラー生成
+pnpm build             # フロントエンドのみビルド
 
-# Vercel
-vercel                # プレビューデプロイ
-vercel --prod         # プロダクションデプロイ
-vercel env pull .env.local  # 環境変数を取得
+# 品質チェック
+pnpm lint              # ESLint チェック
+pnpm type-check        # TypeScript 型チェック
+pnpm test              # Vitest ユニットテスト
+
+# Rust
+cd src-tauri && cargo check   # Rust コンパイルチェック
+cd src-tauri && cargo clippy  # Rust Lint
+cd src-tauri && cargo test    # Rust テスト
+cd src-tauri && cargo fmt     # Rust フォーマット
 ```
 
 ## ディレクトリ構造
 
-```
-src/
-├── app/              # App Router ページ・レイアウト
-│   ├── layout.tsx    # ルートレイアウト
-│   ├── page.tsx      # トップページ
-│   └── globals.css   # グローバルスタイル
-├── db/
-│   ├── index.ts      # DB 接続 (getDb 関数)
-│   └── schema.ts     # Drizzle スキーマ定義
-└── lib/
-    └── utils.ts      # cn() などの共通ユーティリティ
+```text
+├── src/                       # React フロントエンド
+│   ├── app/App.tsx            # メインレイアウト
+│   ├── components/
+│   │   ├── ui/                # shadcn/ui コンポーネント
+│   │   ├── panels/            # サイドパネル
+│   │   └── command-palette/   # コマンドパレット (⌘K)
+│   ├── stores/                # Zustand ストア
+│   │   ├── project-store.ts   # プロジェクト管理
+│   │   └── ui-store.ts        # UI状態 (サイドバー、パレット)
+│   ├── lib/
+│   │   ├── tauri.ts           # 型付き Tauri IPC ブリッジ
+│   │   └── utils.ts           # cn() ユーティリティ
+│   └── types/                 # TypeScript 型定義
+├── src-tauri/                 # Rust バックエンド
+│   ├── src/
+│   │   ├── lib.rs             # Tauri アプリビルダー
+│   │   ├── commands/          # IPC コマンド
+│   │   ├── db/                # SQLite (connection, models)
+│   │   └── error.rs           # AppError 型
+│   ├── migrations/            # SQL マイグレーション
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+└── tests/                     # フロントエンドテスト (Vitest)
 ```
 
 ## コーディング規約
 
-- コンポーネントは `src/app/` 配下の `_components/` に配置
-- Server Component をデフォルトとし、インタラクションが必要な場合のみ `"use client"` を追加
-- DB アクセスは Server Component または Route Handler 内で行う
-- スタイルは Tailwind CSS のユーティリティクラスを使用。`cn()` で条件付きクラスを結合する
-- 環境変数は `process.env.XXX` で参照。クライアントに公開する変数のみ `NEXT_PUBLIC_` プレフィックスを付ける
+### フロントエンド
 
-## Drizzle / Neon の注意点
+- コンポーネントは機能ドメイン別ディレクトリに配置 (`panels/`, `dialogs/` 等)
+- shadcn/ui コンポーネントは `src/components/ui/` に配置 (手動編集しない)
+- スタイルは Tailwind CSS のユーティリティクラス + `cn()` で条件付き結合
+- 状態管理は Zustand で一元管理。React state はコンポーネントローカルな UI 状態のみ
+- Tauri IPC 呼び出しは必ず `src/lib/tauri.ts` を経由する
 
 ```typescript
-// ✅ 正しい: リクエストハンドラ内で getDb() を呼ぶ
-export async function GET() {
-  const db = getDb();
-  const result = await db.select().from(posts);
-  return Response.json(result);
-}
+// ✅ 正しい: tauri.ts 経由で IPC 呼び出し
+import { createProject } from "@/lib/tauri";
+const project = await createProject(name);
 
-// ❌ 誤り: グローバルスコープに DB インスタンスを保持しない
-const db = getDb(); // これはやらない
+// ❌ 誤り: invoke を直接使わない
+import { invoke } from "@tauri-apps/api/core";
+const project = await invoke("create_project", { ... });
 ```
 
-Neon サーバーレスはリクエスト間でコネクションを維持できないため、
-`getDb()` は必ず各リクエストハンドラ内で呼び出すこと。
+### Rust バックエンド
+
+- IPC コマンドは `src-tauri/src/commands/` に機能別に分割
+- エラーは `AppError` 型に統一。`thiserror` で定義
+- SQLite は 1 接続 + `Mutex<Database>` で排他制御
+- UUID は `uuid::Uuid::new_v4().to_string()` で生成
+
+```rust
+// ✅ 正しい: AppState 経由で DB アクセス
+#[tauri::command]
+pub fn create_project(state: State<AppState>, ...) -> Result<Project, AppError> {
+    let db = state.db.lock().unwrap();
+    // ...
+}
+```
+
+### Tailwind v4 の注意点
+
+- CSS 変数は `:root` と `.dark` に直接定義 (`@layer base` の外)
+- `@theme inline` で全変数を Tailwind ユーティリティにマッピング
+- `hsl()` ラッパーは `:root`/`.dark` 内のみ。`@layer base` では `var()` をそのまま使う
+- `tailwind.config.ts` は不要 (v4 では `@tailwindcss/vite` プラグインを使用)
 
 ## MCP サーバー設定
 
-このプロジェクトは `.mcp.json` にプロジェクト固有の MCP サーバーを定義している。
+`.mcp.json` にプロジェクト固有の MCP サーバーを定義している。
 
-| MCP        | 用途                              |
-| ---------- | --------------------------------- |
-| neon       | DB 管理・クエリ実行・ブランチ操作 |
-| vercel     | デプロイ管理・環境変数設定        |
-| github     | PR/Issue 管理・ブランチ操作       |
-| context7   | ライブラリの最新ドキュメント参照  |
-| playwright | E2E テスト・ブラウザ確認          |
-
-### 初回セットアップ
-
-**1. Neon MCP**
-
-```bash
-# Neon Console → Account Settings → API Keys からキーを取得
-# .env.local に追記:
-NEON_API_KEY=your_neon_api_key
-```
-
-**2. Vercel MCP**
-
-```bash
-# Claude Code で初回 OAuth 認証:
-claude mcp add --transport http vercel https://mcp.vercel.com
-```
-
-**3. GitHub MCP**
-
-GitHub の MCP は OAuth 経由。Claude Code の設定から GitHub アカウントと連携する。
-
-## Vercel + Neon セットアップ手順
-
-1. [Neon Console](https://console.neon.tech) でプロジェクト作成
-2. Neon Console → Integrations → Vercel で連携設定
-3. Vercel プロジェクトと紐付けると `DATABASE_URL` が自動設定される
-4. ローカル開発用に `vercel env pull .env.local` を実行
-
-## Claude Code プラグインのセットアップ
-
-Claude Code プラグインはユーザーグローバルにインストールされるため、リポジトリには含まれない。
-新しい環境でセットアップする際は以下を実行すること。
-
-```bash
-# Frontend & UI
-npx claude-plugins install @anthropics/claude-code-plugins/frontend-design
-
-# Feature development workflow
-npx claude-plugins install @anthropics/claude-code-plugins/feature-dev
-
-# Code review
-npx claude-plugins install @anthropics/claude-code-plugins/code-review
-
-# PR review toolkit
-npx claude-plugins install @anthropics/claude-code-plugins/pr-review-toolkit
-
-# Backend development
-npx claude-plugins install @anthropics/claude-code-workflows/backend-development
-
-# Database design
-npx claude-plugins install @anthropics/claude-code-workflows/database-design
-
-# Context management
-npx claude-plugins install @anthropics/claude-code-workflows/context-management
-
-# Frontend excellence (React, CSS, state management)
-npx claude-plugins install @dotclaude/dotclaude-plugins/frontend-excellence
-
-# Commit commands
-npx claude-plugins install @anthropics/claude-code-plugins/commit-commands
-
-# Security guidance
-npx claude-plugins install @anthropics/claude-code-plugins/security-guidance
-
-# JavaScript / TypeScript
-npx claude-plugins install @anthropics/claude-code-workflows/javascript-typescript
-
-# CLAUDE.md management (project-scoped)
-npx claude-plugins install @anthropics/claude-plugins-official/claude-md-management
-```
-
-## GitHub テンプレートとして使う
-
-このリポジトリは GitHub Template Repository として設定されている。
-新しいプロジェクトを始める場合:
-
-1. GitHub の「Use this template」ボタンから新規リポジトリ作成
-2. ローカルに clone
-3. `.env.local` を `.env.example` を参考に作成
-4. Neon と Vercel を連携してデプロイ
-5. 上記の Claude Code プラグインをインストール
+| MCP        | 用途                             |
+| ---------- | -------------------------------- |
+| context7   | ライブラリの最新ドキュメント参照 |
+| playwright | E2E テスト・ブラウザ確認         |
+| github     | PR/Issue 管理・ブランチ操作      |
 
 ## Workflow Orchestration
 
 ### 1. Plan Node Default
 
 - Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
-- If something goes sideways, STOP and re-plan immediately – don't keep pushing
-- Use plan mode for verification steps, not just building
+- If something goes sideways, STOP and re-plan immediately
 - Write detailed specs upfront to reduce ambiguity
 
 ### 2. Subagent Strategy
 
-- Use subagents liberally to keep main context window clean
+- Use subagents to keep main context window clean
 - Offload research, exploration, and parallel analysis to subagents
-- For complex problems, throw more compute at it via subagents
-- One task per subagent for focused execution
 
-### 3. Self-Improvement Loop
-
-- After ANY correction from the user: update `tasks/lessons.md` with the pattern
-- Write rules for yourself that prevent the same mistake
-- Ruthlessly iterate on these lessons until mistake rate drops
-- Review lessons at session start for relevant project
-
-### 4. Verification Before Done
+### 3. Verification Before Done
 
 - Never mark a task complete without proving it works
-- Diff behavior between main and your changes when relevant
-- Ask yourself: "Would a staff engineer approve this?"
-- Run tests, check logs, demonstrate correctness
-
-### 5. Demand Elegance (Balanced)
-
-- For non-trivial changes: pause and ask "is there a more elegant way?"
-- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
-- Skip this for simple, obvious fixes – don't over-engineer
-- Challenge your own work before presenting it
-
-### 6. Autonomous Bug Fixing
-
-- When given a bug report: just fix it. Don't ask for hand-holding
-- Point at logs, errors, failing tests – then resolve them
-- Zero context switching required from the user
-- Go fix failing CI tests without being told how
-
-## Task Management
-
-1. **Plan First**: Write plan to `tasks/todo.md` with checkable items
-2. **Verify Plan**: Check in before starting implementation
-3. **Track Progress**: Mark items complete as you go
-4. **Explain Changes**: High-level summary at each step
-5. **Document Results**: Add review section to `tasks/todo.md`
-6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
+- Run `cargo check` after any Rust changes
+- Run `pnpm type-check` after any TypeScript changes
 
 ## Core Principles
 
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.
 - **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
-- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+- **Minimal Impact**: Changes should only touch what's necessary.

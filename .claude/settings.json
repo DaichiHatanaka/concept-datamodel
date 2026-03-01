@@ -1,14 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(pnpm:*)",
-      "Bash(npx drizzle-kit:*)",
-      "Bash(git:*)",
-      "Bash(vercel:*)",
-      "Bash(npx:*)"
-    ]
-  },
-  "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true
+    "allow": ["Bash(pnpm:*)", "Bash(npx:*)", "Bash(git:*)", "Bash(cargo:*)"]
   }
 }

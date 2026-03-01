@@ -24,7 +24,6 @@
 ## チェックリスト
 
 - [ ] `pnpm lint` がパスする
-- [ ] `pnpm tsc --noEmit` がパスする
+- [ ] `pnpm type-check` がパスする
 - [ ] `pnpm build` がパスする
-- [ ] DB マイグレーションが必要な場合、`migrations/` にファイルを含めた
-- [ ] 環境変数を追加した場合、`.env.example` を更新した
+- [ ] `cargo check` / `cargo clippy` がパスする

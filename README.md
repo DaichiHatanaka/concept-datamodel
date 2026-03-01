@@ -1,132 +1,122 @@
-# Your Project Name
+# Tauri + React + TypeScript テンプレート
 
-> Replace this description with your project's purpose.
+Tauri v2 + React 19 + Vite 6 のデスクトップアプリ開発テンプレート。
+Claude Code による AI 駆動開発に最適化。
 
-A full-stack web application template built with **Next.js 15**, **Neon (PostgreSQL)**, and **Vercel** — optimized for AI-driven development with Claude Code.
+## 技術スタック
 
-## Tech Stack
+| カテゴリ             | 技術                      | バージョン |
+| -------------------- | ------------------------- | ---------- |
+| デスクトップ         | Tauri                     | v2         |
+| バックエンド         | Rust (stable)             | -          |
+| DB                   | SQLite (rusqlite bundled) | 0.32       |
+| フロントエンド       | React                     | 19         |
+| ビルド               | Vite                      | 6          |
+| 状態管理             | Zustand                   | v5         |
+| スタイリング         | Tailwind CSS v4           | v4         |
+| UI コンポーネント    | shadcn/ui                 | latest     |
+| コマンドパレット     | cmdk                      | 1          |
+| 言語                 | TypeScript (strict)       | 5          |
+| パッケージマネージャ | pnpm                      | latest     |
 
-| Category        | Technology                     |
-| --------------- | ------------------------------ |
-| Framework       | Next.js 15 (App Router)        |
-| Language        | TypeScript                     |
-| Styling         | Tailwind CSS v4                |
-| Database        | Neon (PostgreSQL / Serverless) |
-| ORM             | Drizzle ORM                    |
-| Deploy          | Vercel                         |
-| Package Manager | pnpm                           |
+## セットアップ
 
-## Getting Started
+### 前提条件
 
-### 1. Use this template
+- [Node.js](https://nodejs.org/) v22+
+- [pnpm](https://pnpm.io/)
+- [Rust](https://rustup.rs/) stable
+- Tauri v2 のシステム依存 ([公式ドキュメント](https://tauri.app/start/prerequisites/))
 
-Click **"Use this template"** on GitHub to create a new repository.
-
-### 2. Clone and install
+### インストール
 
 ```bash
-git clone https://github.com/DaichiHatanaka/next-template
-cd next-template
+git clone <your-repo-url>
+cd <your-repo>
 pnpm install
 ```
 
-### 3. Set up environment variables
+### 開発サーバー起動
 
 ```bash
-cp .env.example .env.local
-# Edit .env.local with your credentials
+pnpm tauri dev
 ```
 
-### 4. Set up Neon + Vercel
+初回は Rust のコンパイルに数分かかります。2 回目以降は差分ビルドで高速です。
 
-1. Create a project at [Neon Console](https://console.neon.tech)
-2. Connect Neon to Vercel via Neon Console → Integrations → Vercel
-3. Pull environment variables:
+## コマンド一覧
 
 ```bash
-vercel env pull .env.local
+# 開発
+pnpm tauri dev          # デスクトップアプリ起動 (Rust + Vite hot reload)
+pnpm dev                # フロントエンドのみ起動 (http://localhost:1420)
+
+# ビルド
+pnpm tauri build        # プロダクションビルド + インストーラー生成
+pnpm build              # フロントエンドのみビルド
+
+# 品質チェック
+pnpm lint               # ESLint チェック
+pnpm type-check         # TypeScript 型チェック
+pnpm test               # Vitest ユニットテスト
+
+# Rust
+cd src-tauri && cargo check    # Rust コンパイルチェック
+cd src-tauri && cargo clippy   # Rust Lint
+cd src-tauri && cargo test     # Rust テスト
+cd src-tauri && cargo fmt      # Rust フォーマット
 ```
 
-### 5. Run database migrations
-
-```bash
-pnpm drizzle-kit migrate
-```
-
-### 6. Start development server
-
-```bash
-pnpm dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to see the result.
-
-## Available Commands
-
-```bash
-pnpm dev              # Start development server
-pnpm build            # Production build
-pnpm lint             # ESLint check
-pnpm type-check       # TypeScript type check
-
-# Database
-pnpm drizzle-kit generate   # Generate migration files
-pnpm drizzle-kit migrate    # Run migrations
-pnpm drizzle-kit studio     # Open DB GUI in browser
-
-# Deploy
-vercel                # Preview deploy
-vercel --prod         # Production deploy
-```
-
-## Project Structure
+## ディレクトリ構造
 
 ```text
-src/
-├── app/              # App Router pages & layouts
-│   ├── layout.tsx
-│   ├── page.tsx
-│   └── globals.css
-├── db/
-│   ├── index.ts      # DB connection (getDb)
-│   └── schema.ts     # Drizzle schema definitions
-└── lib/
-    └── utils.ts      # Shared utilities (cn, etc.)
+├── src/                       # React フロントエンド
+│   ├── app/App.tsx            # メインレイアウト
+│   ├── components/
+│   │   ├── ui/                # shadcn/ui コンポーネント
+│   │   ├── panels/            # サイドパネル
+│   │   └── command-palette/   # コマンドパレット (⌘K)
+│   ├── stores/                # Zustand ストア
+│   │   ├── project-store.ts   # プロジェクト管理
+│   │   └── ui-store.ts        # UI 状態
+│   ├── lib/
+│   │   ├── tauri.ts           # 型付き Tauri IPC ブリッジ
+│   │   └── utils.ts           # cn() ユーティリティ
+│   └── types/                 # TypeScript 型定義
+├── src-tauri/                 # Rust バックエンド
+│   ├── src/
+│   │   ├── lib.rs             # Tauri アプリビルダー
+│   │   ├── commands/          # IPC コマンド
+│   │   ├── db/                # SQLite (connection, models)
+│   │   └── error.rs           # AppError 型
+│   ├── migrations/            # SQL マイグレーション
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+└── tests/                     # フロントエンドテスト (Vitest)
 ```
+
+## 含まれているもの
+
+- **プロジェクト CRUD** — SQLite に保存する基本的な CRUD の参考実装
+- **サイドバー + コマンドパレット** — Zustand で管理する UI パターン
+- **shadcn/ui** — Button, Input, Dialog, Tooltip 等の基本コンポーネント
+- **CI/CD** — GitHub Actions (lint/test/build + クロスプラットフォームビルド + リリース)
+- **コード品質** — ESLint, Prettier, Husky + lint-staged, EditorConfig
+
+## Windows での注意事項
+
+VS 2022 Community の MSVC でビルドエラーが出る場合は `src-tauri/.cargo/config.toml` を作成してリンカーパスを設定してください。このファイルはマシン固有のため `.gitignore` に含まれています。
 
 ## GitHub Actions
 
-This template includes a **Vercel Preview Deployment** workflow that runs on every pull request.
+3 つのワークフローが含まれています:
 
-**Required repository secrets:**
+| ワークフロー  | トリガー        | 内容                                                             |
+| ------------- | --------------- | ---------------------------------------------------------------- |
+| `ci.yml`      | push / PR       | Frontend (lint + type-check + test) + Rust (fmt + clippy + test) |
+| `build.yml`   | push / PR       | Tauri クロスプラットフォームビルド (Linux, Windows, macOS)       |
+| `preview.yml` | タグ push (v\*) | GitHub Releases にインストーラーをアップロード                   |
 
-| Secret              | Description                  |
-| ------------------- | ---------------------------- |
-| `VERCEL_TOKEN`      | Vercel personal access token |
-| `VERCEL_ORG_ID`     | Vercel organization/team ID  |
-| `VERCEL_PROJECT_ID` | Vercel project ID            |
+## ライセンス
 
-Get these values by running `vercel link` and checking `.vercel/project.json`.
-
-## Claude Code Setup
-
-This template is optimized for [Claude Code](https://claude.ai/code). Install the recommended plugins in a new environment:
-
-```bash
-npx claude-plugins install @anthropics/claude-code-plugins/frontend-design
-npx claude-plugins install @anthropics/claude-code-plugins/feature-dev
-npx claude-plugins install @anthropics/claude-code-plugins/code-review
-npx claude-plugins install @anthropics/claude-code-plugins/pr-review-toolkit
-npx claude-plugins install @anthropics/claude-code-plugins/commit-commands
-npx claude-plugins install @anthropics/claude-code-plugins/security-guidance
-npx claude-plugins install @anthropics/claude-code-workflows/backend-development
-npx claude-plugins install @anthropics/claude-code-workflows/database-design
-npx claude-plugins install @anthropics/claude-code-workflows/context-management
-npx claude-plugins install @anthropics/claude-code-workflows/javascript-typescript
-npx claude-plugins install @dotclaude/dotclaude-plugins/frontend-excellence
-npx claude-plugins install @anthropics/claude-plugins-official/claude-md-management  # project-scoped
-```
-
-## License
-
-MIT — see [LICENSE](LICENSE) for details.
+MIT — [LICENSE](LICENSE) を参照。
